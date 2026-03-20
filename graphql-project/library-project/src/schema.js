@@ -1,5 +1,5 @@
 const { GraphQLError } = require("graphql/error")
-const { authors, books } = require("./resources")
+let { authors, books } = require("./resources")
 
 const { gql } = require("graphql-tag");
 
@@ -34,7 +34,11 @@ const typeDefs = gql`
             author: String!,
             published: Int,
             genres: [String]!
-        ): Book
+        ): Book,
+        editAuthor(
+            name: String!,
+            born: Int!
+        ): Author
     }
 `
 
@@ -63,7 +67,7 @@ const resolvers = {
         addBook: (root, args) => {
 
             if(books.find(bk => bk.title === args.title)){
-                throw new GraphQLError('Name must be unique', {
+                throw new GraphQLError('Name must be unique' + args.title, {
                     extensions: {
                         code: 'Bad User Input',
                         invalidArgs: args.title
@@ -74,6 +78,17 @@ const resolvers = {
             const book = {...args, id: uuidv4()}
             books = books.concat(book)
             return book
+        },
+        editAuthor: (root, args) => {
+            const author = authors.find(a => a.name === args.name);
+
+            if(!author){
+                throw new Error(`Author does not exist.`)
+            }
+
+            const updatedAuthor = {...author, born: args.born};
+            authors = authors.map(a => a.name === args.name ? updatedAuthor : a);
+            return updatedAuthor
         }
     }
 }
